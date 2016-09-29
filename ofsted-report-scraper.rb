@@ -6,19 +6,21 @@ require 'open-uri'
 require 'open_uri_redirections'
 require 'pdf-reader'
 require 'enumerator'
+require 'ruby-progressbar'
 
 BASE_URL = "https://reports.ofsted.gov.uk"
-SEARCH_PAGE_URL = "https://reports.ofsted.gov.uk/inspection-reports/find-inspection-report/results/1/any/any/any/any/any/any/any/any/any/0/0?page="
-# sample_page_url = "https://reports.ofsted.gov.uk/inspection-reports/find-inspection-report/provider/ELS/126490"
+# SEARCH_PAGE_URL = "https://reports.ofsted.gov.uk/inspection-reports/find-inspection-report/results/1/any/any/any/any/any/any/any/any/any/0/0?page="
+# Primary schools only:
+SEARCH_PAGE_URL = "https://reports.ofsted.gov.uk/inspection-reports/find-inspection-report/results/1/21/any/any/any/any/any/any/any/any/0/0?page="
 
 # Write to CSV
 def write_CSV(rows, csv_path)
   headers = rows.first.keys
-  csv = CSV.generate do |csv|
+  csv_file = CSV.generate do |csv|
       csv << headers
       rows.each { |result| csv << result.values }
   end
-  File.write(csv_path,csv)
+  File.write(csv_path,csv_file)
   puts "Wrote CSV to #{csv_path}"
 end
 
@@ -49,9 +51,9 @@ def process_search_results(page_num)
       address: result_paras[0] && result_paras[0].inner_text,
       urn: urn && /URN: (.+)/.match(urn.inner_text)[1],
       type: type && /Provider type: (.+)/.match(type.inner_text)[1],
-      local_authority: local_authority && /Local authority: (.+)/.match(local_authority.inner_text)[1],
-      region: region && /Region: (.+)/.match(region.inner_text)[1],
-      latest_report: latest_report && /Latest report: (.+)/.match(latest_report.inner_text)[1],
+      local_authority: local_authority && /Local authority: (.+)/.match(local_authority.inner_text)[1].chomp,
+      region: region && /Region: (.+)/.match(region.inner_text)[1].chomp,
+      latest_report: latest_report && /Latest report: (.+)/.match(latest_report.inner_text)[1].chomp,
     }
     results_array << result_details
   end
@@ -70,7 +72,7 @@ def download_search_result_pages(first_page=0, last_page=999999)
     else
     all_results.concat(new_results)
     puts "    Downloaded page #{n}/#{last_page}" if n % 5 == 0
-    sleep 0.1
+    sleep 0.1 + rand/2.0
     end
   end
   return all_results
@@ -93,15 +95,26 @@ def scrape_school_page_for_reports(school)
   report_rows = doc.css('#archive-reports tbody tr')
   report_rows.each do |report_row|
     cells = report_row.css('td')
+    report_link = cells[0].css('a').attribute('href').value
+    report_number = report_link.match(/\/files\/(\d+)\/urn\/\d+\.pdf$/)[1]
+    report_date = cells[1].inner_text
+    inspection_date = report_date.match(/(?<day>\d\d?) (?<month>\w{3}) (?<year>\d{4})/)
+    inspection_date = inspection_date['year'] + '_' + inspection_date['month'] + '_' + inspection_date['day']
+    school_name = school[0]
+    school_urn = school[3]
+    file_name = school_urn + '-' + report_number + '-' + school_name.gsub(/[^A-Za-z]/,'') + '-' + inspection_date + '.pdf'
     report_details = {
-      school_name: school[0],
+      school_name: school_name,
       school_url: school[1],
-      school_urn: school[3],
+      school_urn: school_urn,
       school_latest_overall_effectiveness: latest_report_overall_effectiveness,
       report_name: cells[0].css('a').inner_text,
-      link: cells[0].css('a').attribute('href').value,
-      inspection_date: cells[1].inner_text,
-      first_publication_date: cells[2].inner_text  
+      link: report_link,
+      inspection_date: report_date,
+      first_publication_date: cells[2].inner_text,
+      school_type: school[4],
+      school_region: school[6],
+      pdf_file_name: file_name
     }
     reports << report_details
   end
@@ -115,14 +128,10 @@ def scrape_school_pages(schools_csv)
     new_reports = scrape_school_page_for_reports(school)
     reports.concat(new_reports)
     puts "  Logged #{new_reports.length} link(s) for #{school[0]}"
-    sleep 0.1
+    sleep 0.1 + rand/2.0
   end
   return reports
 end
-
-# write_CSV(download_search_result_pages(0,100),'./output/gosforth_schools2.csv')
-# write_CSV(scrape_school_pages('./output/gosforth_schools2.csv'),'./output/gosforth_schools_reports2.csv')
-# write_CSV(scrape_school_pages('./output/gosforth_schools.csv'),'./output/gosforth_schools_reports.csv')
 
 ##
 ## DOWNLOAD REPORTS
@@ -130,15 +139,10 @@ end
 
 # school_name,school_url,school_urn,school_latest_overall_effectiveness,report_name,link,inspection_date,first_publication_date
 
-def download_report_pdf(report, directory)
-  report_school_name = report[0]
-  report_school_urn = report[2]
-  report_name = report[4]
+def download_report_pdf(report, directory,progressbar)
   report_link = report[5]
-  report_number = report_link.match(/\/files\/(\d+)\/urn\/\d+\.pdf$/)[1]
-  inspection_date = report[6].match(/(?<day>\d\d?) (?<month>\w{3}) (?<year>\d{4})/)
-  inspection_date = inspection_date['year'] + '_' + inspection_date['month'] + '_' + inspection_date['day']
-  file_path = directory + report_school_urn + '-' + report_number + '-' + report_school_name.gsub(/[^A-Za-z]/,'') + '-' + inspection_date + '.pdf'
+  file_name = report.last
+  file_path = directory + file_name
   report_url = BASE_URL + report_link
   File.open(file_path, "wb") do |file|
     tries = 0
@@ -149,52 +153,84 @@ def download_report_pdf(report, directory)
     rescue OpenURI::HTTPError => e
       if tries < 5
         sleep tries * 5.0 + rand * 5.0
-        puts "   Connection failed (#{e.message}), retrying..."
+        progressbar.log "   Connection failed (#{e.message}), retrying..."
         retry 
       else
         next
       end
     end
-  puts "    Downloaded #{report_name+report_number} for #{report_school_name}"
+  # progessbar.log "    Downloaded #{file_name}"
   end
 end
 
-def download_report_pdfs(report_csv, directory)
-  puts "Processing #{report_csv}"
+# Download all the report pdfs from a csv of reports, filtered by year if specified, output to specified directory
+def download_report_pdfs(report_csv, directory,year=nil)
+  reports = CSV.read(report_csv)
+  headers = reports.shift
+  reports = reports.select {|report| year.nil? || report[6].match(year) } # filter by year
+  files = reports.map {|report| report.last}
+  total_files = files.count
+  files = files.select {|file| !File.exist?(directory + file)}
+  files_to_download = files.count
+  progressbar = ProgressBar.create starting_at: 0, total: files.count, format: "%a %e Processed: %c/%C (%P%) |%B |"
+  progressbar.log "Processing #{report_csv}, #{files_to_download} of #{total_files} to download..."
   Dir.mkdir(directory) unless Dir.exist?(directory)
-  CSV.foreach(report_csv) do |report|
-    next unless /School inspection report/.match(report[4])
-    puts report[0]
-    download_report_pdf(report,directory)
+  reports.each do |report|
+    report_hash = Hash[headers.zip(report)]
+    next unless /School inspection report/.match(report_hash['report_name'])
+    # puts report['school_name']
+    download_report_pdf(report,directory,progressbar)
     sleep 1.0 + rand
+    progressbar.increment
   end
 end
-
-# download_report_pdfs('./output/gosforth_schools_reports.csv','./output/pdfs/')
 
 ##
 ## CONVERT REPORTS
 ##
 
 def convert_pdf(pdf,output_file=nil)
-  parsed_file = PDF::Reader.new(pdf)
-  text = ""
-  parsed_file.pages.each do |page| 
-    text.concat(page.text)
-  end
   output_file ||= pdf.sub(/.pdf$/, '.txt')
   if File.exist?(output_file)
     # puts "File exists, skipping..."
   else
-    # puts pdf
+    text = ""
+    parsed_file = PDF::Reader.new(pdf)
+    parsed_file.pages.each {|page| text.concat(page.text)}
     File.write(output_file, text)
-    puts "Creating .txt: #{output_file}"
+    # puts "Creating .txt: #{output_file}"
   end
 end
 
 def convert_pdfs(folder)
   files = Dir.glob(folder + '*.pdf')
-  files.each {|file| convert_pdf(file)}
+  # progressbar = ProgressBar.create(title: 'Files', starting_at: 0, total: files.count)
+  progressbar = ProgressBar.create starting_at: 0, total: files.count, format: "%a Processed: %c/%C (%P%) |%B |"
+  files.each do |file|
+    begin
+    convert_pdf(file) 
+    progressbar.increment
+    rescue PDF::Reader::MalformedPDFError
+        progressbar.log "Malformed PDF: #{file}"
+      next
+    end
+  end
+end
+
+# Same as above, but uses the CSV of reports rather than the directory
+def convert_pdfs_from_csv(folder)
+  files = Dir.glob(folder + '*.pdf')
+  # progressbar = ProgressBar.create(title: 'Files', starting_at: 0, total: files.count)
+  progressbar = ProgressBar.create starting_at: 0, total: files.count, format: "%a Processed: %c/%C (%P%) |%B |"
+  files.each do |file|
+    begin
+    convert_pdf(file) 
+    progressbar.increment
+    rescue PDF::Reader::MalformedPDFError
+        progressbar.log "Malformed PDF: #{file}"
+      next
+    end
+  end
 end
 
 ##
@@ -206,20 +242,12 @@ def scan_reports(folder)
   counts = []
   files.each do |file|
     i,j = 0,0
-    text = File.open(file, "r").read
+    text = File.open(file, "r").read.gsub('\n','') # clear newlines introduced by PDF
     text.scan(/science|scientific/) {i += 1}
     text.scan(/math/) {j += 1}
-    counts.concat([{filename: file, science_mentions: i, maths_mentions: j}])
+    corrupt_pdf = text.include?('?????????')
+    puts file if corrupt_pdf 
+    counts.concat([{filename: file, corrupt_pdf: corrupt_pdf, science_mentions: i, maths_mentions: j}])
   end
   return counts
 end
-
-# write_CSV(download_search_result_pages(1,250),'./output/all_schools.csv')
-# write_CSV(scrape_school_pages('./output/all_schools.csv'),'./output/all_school_inspection_reports.csv')
-# download_report_pdfs('./output/all_school_inspection_reports.csv','./output/all_pdfs/')
-convert_pdfs('./output/all_pdfs/')
-# convert_pdfs('./output/test_pdfs/')
-# write_CSV(scan_reports('./output/all_pdfs/'),'./output/all_science_mentions.csv')
-
-# download_report_pdfs('./output/gosforth_schools_reports.csv','./output/pdfs/')
-# write_CSV(scan_reports('./output/pdfs/'),'./output/gosforth_science_mentions.csv')
