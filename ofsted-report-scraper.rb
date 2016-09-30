@@ -33,10 +33,10 @@ def process_search_results(page_num)
   results_list = doc.css('ul.resultsList li')
   results_array = []
   results_list.each do |result|
-    result_paras = result.css('p')
-    # Find which paragraphs contain what, as not always consistent 
-    urn = result_paras.find { |para| para.inner_text =~ /URN:/ }
+    result_paras = result.css('p') # split to paras
+    # Find which paragraphs contain what, as not always consistent :(
     type = result_paras.find { |para| para.inner_text =~ /Provider type:/ }
+    urn = result_paras.find { |para| para.inner_text =~ /URN:/ }
     local_authority = result_paras.find { |para| para.inner_text =~ /Local authority:/ }
     region = result_paras.find { |para| para.inner_text =~ /Region:/ }
     latest_report = result_paras.find { |para| para.inner_text =~ /Latest report:/ }
