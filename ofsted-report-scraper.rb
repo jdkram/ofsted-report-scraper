@@ -1,10 +1,9 @@
-require 'nokogiri'
+require 'nokogiri' # parse HTML
 require 'csv'
-require 'httparty'
-require 'pry'
+require 'httparty' # download pages
 require 'open-uri'
-require 'open_uri_redirections'
-require 'pdf-reader'
+require 'open_uri_redirections' # Need this too, as redirect to report PDFs
+require 'pdf-reader' # fastest PDF gem I've tried
 require 'enumerator'
 require 'ruby-progressbar'
 
