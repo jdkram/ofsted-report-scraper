@@ -57,8 +57,7 @@ def process_search_results(page_num)
 end
 
 # Follow paginated results
-def download_search_result_pages(first_page=0, last_page=999999)
-  puts "Downloading pages #{first_page} to #{last_page}"
+def scrape_search_pages(first_page=0, last_page=999999)
   all_results = []
   (first_page..last_page).each do |n|
     new_results = process_search_results(n)
