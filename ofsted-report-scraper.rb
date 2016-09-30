@@ -58,11 +58,13 @@ end
 
 # Follow paginated results
 def scrape_search_pages(first_page=0, last_page=999999)
+  progressbar.log "Downloading pages #{first_page} to #{last_page}"
+  progressbar = ProgressBar.create starting_at: first_page, total: last_page, format: "%a Processed: %c"
   all_results = []
   (first_page..last_page).each do |n|
     new_results = process_search_results(n)
     if new_results.empty?
-      puts "    No results for page #{n}, ending search."
+      progressbar.log "No results for page #{n}, ending search."
       break
     else
     all_results.concat(new_results)
@@ -117,13 +119,16 @@ def scrape_school_page_for_reports(school)
 end
 
 def scrape_school_pages(schools_csv)
+  schools = CSV.read(schools_csv)
+  progressbar = ProgressBar.create starting_at: 0, total: schools.count, format: "%a Processed: %c/%C (%P%) |%B|"
   reports = []
-  CSV.foreach(schools_csv) do |school|
+  schools.each do |school|
     next if school[0] == 'name'
     new_reports = scrape_school_page_for_reports(school)
     reports.concat(new_reports)
-    puts "  Logged #{new_reports.length} link(s) for #{school[0]}"
-    sleep 0.1 + rand/2.0
+    progressbar.increment
+    # progressbar.log "  Logged #{new_reports.length} link(s) for #{school[0]}"
+    sleep rand(0.1..0.6)
   end
   return reports
 end
@@ -236,15 +241,16 @@ def scan_reports(folder)
   files = Dir.glob(folder + '*.txt')
   counts = []
   files.each do |file|
-    i,j,k,l = 0,0,0,0
     text = File.open(file, "r").read.gsub('\n','') # clear newlines introduced by PDF
-    text.scan(/science|scientific|scien/i) {i += 1}
-    text.scan(/math/i) {j += 1}
-    text.scan(/investigation|experiment/i) {k += 1}
-    text.scan(/CPD|professional development/i) {l += 1}
+    search_results = Hash.new
+    KEYWORD_SEARCHES.each do |search|
+      col_name = search.source + ("_mention")
+      search_results[col_name] = 0
+      text.scan(search) {search_results[col_name] += 1}
+    end
     corrupt_pdf = text.include?('?????????')
     puts file if corrupt_pdf 
-    counts.concat([{filename: file, corrupt_pdf: corrupt_pdf, science_mentions: i, maths_mentions: j,experiment_mentions: k, cpd_mentions: l}])
+    counts.concat([{filename: file, corrupt_pdf: corrupt_pdf}.merge(search_results)])
   end
   return counts
 end
