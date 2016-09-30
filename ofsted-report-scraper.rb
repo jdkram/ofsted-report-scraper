@@ -200,23 +200,7 @@ end
 def convert_pdfs(folder)
   files = Dir.glob(folder + '*.pdf')
   # progressbar = ProgressBar.create(title: 'Files', starting_at: 0, total: files.count)
-  progressbar = ProgressBar.create starting_at: 0, total: files.count, format: "%a Processed: %c/%C (%P%) |%B |"
-  files.each do |file|
-    begin
-    convert_pdf(file) 
-    progressbar.increment
-    rescue PDF::Reader::MalformedPDFError
-        progressbar.log "Malformed PDF: #{file}"
-      next
-    end
-  end
-end
-
-# Same as above, but uses the CSV of reports rather than the directory
-def convert_pdfs_from_csv(folder)
-  files = Dir.glob(folder + '*.pdf')
-  # progressbar = ProgressBar.create(title: 'Files', starting_at: 0, total: files.count)
-  progressbar = ProgressBar.create starting_at: 0, total: files.count, format: "%a Processed: %c/%C (%P%) |%B |"
+  progressbar = ProgressBar.create starting_at: 0, total: files.count, format: "%a Processed: %c/%C (%P%) |%B|"
   files.each do |file|
     begin
     convert_pdf(file) 
