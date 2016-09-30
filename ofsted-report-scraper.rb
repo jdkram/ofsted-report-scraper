@@ -241,13 +241,15 @@ def scan_reports(folder)
   files = Dir.glob(folder + '*.txt')
   counts = []
   files.each do |file|
-    i,j = 0,0
+    i,j,k,l = 0,0,0,0
     text = File.open(file, "r").read.gsub('\n','') # clear newlines introduced by PDF
-    text.scan(/science|scientific/) {i += 1}
-    text.scan(/math/) {j += 1}
+    text.scan(/science|scientific|scien/i) {i += 1}
+    text.scan(/math/i) {j += 1}
+    text.scan(/investigation|experiment/i) {k += 1}
+    text.scan(/CPD|professional development/i) {l += 1}
     corrupt_pdf = text.include?('?????????')
     puts file if corrupt_pdf 
-    counts.concat([{filename: file, corrupt_pdf: corrupt_pdf, science_mentions: i, maths_mentions: j}])
+    counts.concat([{filename: file, corrupt_pdf: corrupt_pdf, science_mentions: i, maths_mentions: j,experiment_mentions: k, cpd_mentions: l}])
   end
   return counts
 end
