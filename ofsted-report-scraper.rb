@@ -68,14 +68,11 @@ def scrape_search_pages(first_page=0, last_page=999999)
       break
     else
     all_results.concat(new_results)
-    puts "    Downloaded page #{n}/#{last_page}" if n % 5 == 0
-    sleep 0.1 + rand/2.0
+    sleep rand(0.1..0.6)
     end
   end
   return all_results
 end
-
-
 
 ##
 ## GET REPORT LINKS
