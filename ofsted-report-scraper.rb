@@ -8,9 +8,6 @@ require 'enumerator'
 require 'ruby-progressbar'
 
 BASE_URL = "https://reports.ofsted.gov.uk"
-# SEARCH_PAGE_URL = "https://reports.ofsted.gov.uk/inspection-reports/find-inspection-report/results/1/any/any/any/any/any/any/any/any/any/0/0?page="
-# Primary schools only:
-SEARCH_PAGE_URL = "https://reports.ofsted.gov.uk/inspection-reports/find-inspection-report/results/1/21/any/any/any/any/any/any/any/any/0/0?page="
 
 # Write to CSV
 def write_CSV(rows, csv_path)
