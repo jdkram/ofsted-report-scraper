@@ -163,19 +163,19 @@ def download_report_pdfs(report_csv, directory,year=nil)
   reports = CSV.read(report_csv)
   headers = reports.shift
   reports = reports.select {|report| year.nil? || report[6].match(year) } # filter by year
-  files = reports.map {|report| report.last}
-  total_files = files.count
-  files = files.select {|file| !File.exist?(directory + file)}
-  files_to_download = files.count
-  progressbar = ProgressBar.create starting_at: 0, total: files.count, format: "%a %e Processed: %c/%C (%P%) |%B |"
-  progressbar.log "Processing #{report_csv}, #{files_to_download} of #{total_files} to download..."
+  files_to_download = reports.map {|report| report.last}
+  total_files = files_to_download.count
+  # Only select files which haven't already been [downloaded], or [downloaded, converted and deleted].
+  files_to_download = files_to_download.select {|file| !(File.exist?(directory + file) || File.exist?((directory + file.gsub(/.pdf$/, ".txt"))))}
+  progressbar = ProgressBar.create starting_at: total_files - files_to_download.count, total: files_to_download.count, format: "%a %e Processed: %c/%C (%P%) |%B|"
+  progressbar.log "Processing #{report_csv}, #{files_to_download.count} of #{total_files} to download..."
   Dir.mkdir(directory) unless Dir.exist?(directory)
   reports.each do |report|
     report_hash = Hash[headers.zip(report)]
-    next unless /School inspection report/.match(report_hash['report_name'])
+    next unless REPORT_TYPES.match(report_hash['report_name'])
     # puts report['school_name']
     download_report_pdf(report,directory,progressbar)
-    sleep 1.0 + rand
+    sleep rand(1.0..2.0)
     progressbar.increment
   end
 end
