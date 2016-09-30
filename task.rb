@@ -1,4 +1,4 @@
-require_relative './ofsted-report-parser.rb'
+require_relative './ofsted-report-scraper.rb'
 
 write_CSV(download_search_result_pages,'./output/all_primary_schools.csv')
 write_CSV(scrape_school_pages('./output/all_primary_schools.csv'),'./output/all_primary_school_inspection_reports.csv')
