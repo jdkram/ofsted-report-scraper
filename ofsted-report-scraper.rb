@@ -104,7 +104,7 @@ def scrape_school_page_for_reports(school)
       school_url: school[1],
       school_urn: school_urn,
       school_latest_overall_effectiveness: latest_report_overall_effectiveness,
-      report_name: cells[0].css('a').inner_text,
+      report_name: cells[0].css('a').inner_text.rstrip,
       link: report_link,
       inspection_date: report_date,
       first_publication_date: cells[2].inner_text,
