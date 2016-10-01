@@ -165,19 +165,18 @@ end
 def download_report_pdfs(report_csv, directory,year=nil)
   reports = CSV.read(report_csv)
   headers = reports.shift
-  reports = reports.select {|report| year.nil? || report[6].match(year) } # filter by year
-  files_to_download = reports.map {|report| report.last}
-  total_files = files_to_download.count
-  # Only select files which haven't already been [downloaded], or [downloaded, converted and deleted].
-  files_to_download = files_to_download.select {|file| !(File.exist?(directory + file) || File.exist?((directory + file.gsub(/.pdf$/, ".txt"))))}
-  progressbar = ProgressBar.create starting_at: total_files - files_to_download.count, total: files_to_download.count, format: "%a %e Processed: %c/%C (%P%) |%B|"
-  progressbar.log "Processing #{report_csv}, #{files_to_download.count} of #{total_files} to download..."
-  Dir.mkdir(directory) unless Dir.exist?(directory)
-  reports.each do |report|
+  reports = reports.select { |report|
     report_hash = Hash[headers.zip(report)]
-    next unless REPORT_TYPES.match(report_hash['report_name'])
-    # puts report['school_name']
-    download_report_pdf(report,directory,progressbar)
+    REPORT_TYPES.include?(report_hash['report_name']) && (year.nil? || report_hash['inspection_date'].match(year))
+    } # filter by year and report type
+  total_reports = reports.count
+  # Only select files which haven't already been [downloaded], or [downloaded, converted and deleted].
+  reports_to_download = reports.select {|report| !(File.exist?(directory + report[-1]) || File.exist?((directory + report[-1].gsub(/.pdf$/, ".txt"))))}
+  progressbar = ProgressBar.create(starting_at: total_reports - reports_to_download.count, total: total_reports, format: "%a %e %c/%C PDFs downloaded (%P%)")
+  Dir.mkdir(directory) unless Dir.exist?(directory)
+  reports_to_download.each do |report|
+    progressbar.log("Downloading report #{report}")
+    download_report_pdf(report,directory)
     sleep rand(1.0..2.0)
     progressbar.increment
   end
