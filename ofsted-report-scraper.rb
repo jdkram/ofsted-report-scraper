@@ -17,7 +17,7 @@ def write_CSV(rows, csv_path)
       rows.each { |result| csv << result.values }
   end
   File.write(csv_path,csv_file)
-  puts "Wrote #{csv_path}"
+  puts "  wrote #{csv_path}"
 end
 
 ##
