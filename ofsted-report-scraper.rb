@@ -137,7 +137,7 @@ end
 
 # school_name,school_url,school_urn,school_latest_overall_effectiveness,report_name,link,inspection_date,first_publication_date
 
-def download_report_pdf(report, directory,progressbar)
+def download_report_pdf(report, directory)
   report_link = report[5]
   file_name = report.last
   file_path = directory + file_name
@@ -151,7 +151,7 @@ def download_report_pdf(report, directory,progressbar)
     rescue OpenURI::HTTPError => e
       if tries < 5
         sleep tries * 5.0 + rand * 5.0
-        progressbar.log "   Connection failed (#{e.message}), retrying..."
+        puts "   Connection failed (#{e.message}), retrying..."
         retry 
       else
         next
