@@ -10,7 +10,7 @@ Download and inspect Ofsted reports for keywords. This code will:
 
 ### Installation ###
 
-1. `git pull https://github.com/jdkram/ofsted-report-scraper.rb`
+1. `git clone https://github.com/jdkram/ofsted-report-scraper`
 2. `cd ofsted-report-scraper`
 3. `gem install bundler`
 4. `bundle install`
