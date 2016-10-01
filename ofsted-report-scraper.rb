@@ -188,21 +188,18 @@ end
 
 def convert_pdf(pdf,output_file=nil)
   output_file ||= pdf.sub(/.pdf$/, '.txt')
-  if File.exist?(output_file)
-    # puts "File exists, skipping..."
-  else
-    text = ""
-    parsed_file = PDF::Reader.new(pdf)
-    parsed_file.pages.each {|page| text.concat(page.text)}
-    File.write(output_file, text)
-    # puts "Creating .txt: #{output_file}"
-  end
+  text = ""
+  parsed_file = PDF::Reader.new(pdf)
+  parsed_file.pages.each {|page| text.concat(page.text)}
+  File.write(output_file, text)
+  # puts "Creating .txt: #{output_file}"
 end
 
 def convert_pdfs(folder)
   files = Dir.glob(folder + '*.pdf')
-  # progressbar = ProgressBar.create(title: 'Files', starting_at: 0, total: files.count)
-  progressbar = ProgressBar.create starting_at: 0, total: files.count, format: "%a Processed: %c/%C (%P%) |%B|"
+  total_files = files.count
+  files = files.select {|file| !File.exist?(file.sub(/.pdf$/, '.txt'))}
+  progressbar = ProgressBar.create(starting_at: total_files - files.count, total: total_files, format: "%a %e %c/%C PDFs converted (%P%)")
   files.each do |file|
     begin
     convert_pdf(file) 
