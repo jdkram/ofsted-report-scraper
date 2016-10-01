@@ -119,14 +119,13 @@ end
 
 def scrape_school_pages(schools_csv)
   schools = CSV.read(schools_csv)
-  progressbar = ProgressBar.create starting_at: 0, total: schools.count, format: "%a Processed: %c/%C (%P%) |%B|"
+  schools.shift # remove header row
+  progressbar = ProgressBar.create(starting_at: 0, total: schools.count, format: "%a %c/%C school pages scraped: |%B|")
   reports = []
   schools.each do |school|
-    next if school[0] == 'name'
     new_reports = scrape_school_page_for_reports(school)
     reports.concat(new_reports)
     progressbar.increment
-    # progressbar.log "  Logged #{new_reports.length} link(s) for #{school[0]}"
     sleep rand(0.1..0.6)
   end
   return reports
