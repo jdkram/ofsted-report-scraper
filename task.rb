@@ -4,7 +4,7 @@ require_relative './ofsted-report-scraper.rb'
 searches = {
     all_schools: "1/any/any/any/any/any/any/any/any/any/0/0",
     primary_schools: "1/21/any/any/any/any/any/any/any/any/0/0",
-    secondary_schools: ""
+    secondary_schools: "1/23/any/any/any/any/any/any/any/any/0/0"
 }
 
 # Pick things
