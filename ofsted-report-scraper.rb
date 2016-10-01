@@ -87,7 +87,7 @@ def scrape_school_page_for_reports(school)
   doc = Nokogiri::HTML(HTTParty.get(url))
   reports = []
   latest_report_summary = doc.css('div.download-report-wrapper')
-  latest_report_overall_effectiveness = latest_report_summary.css('#overall-effectivness span') && latest_report_summary.css('#overall-effectivness span')[1].text
+  latest_report_overall_effectiveness = latest_report_summary.css('#overall-effectivness span')[1] && latest_report_summary.css('#overall-effectivness span')[1].text
   report_rows = doc.css('#archive-reports tbody tr')
   report_rows.each do |report_row|
     cells = report_row.css('td')
