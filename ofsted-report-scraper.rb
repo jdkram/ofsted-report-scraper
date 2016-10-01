@@ -58,8 +58,11 @@ end
 
 # Follow paginated results
 def scrape_search_pages(first_page=0, last_page=999999)
-  progressbar.log "Downloading pages #{first_page} to #{last_page}"
-  progressbar = ProgressBar.create starting_at: first_page, total: last_page, format: "%a Processed: %c"
+  if last_page < 999999
+    progressbar = ProgressBar.create(starting_at: first_page, total: last_page+1, format: "%a %c/%C search pages scraped: |%B|")
+  else
+    progressbar = ProgressBar.create(starting_at: first_page, total: nil, format: "%a %c search pages scraped: |%B|")
+  end
   all_results = []
   (first_page..last_page).each do |n|
     new_results = process_search_results(n)
