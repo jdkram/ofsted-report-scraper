@@ -234,5 +234,6 @@ def scan_reports(folder)
     puts file if corrupt_pdf 
     counts.concat([{filename: file, corrupt_pdf: corrupt_pdf}.merge(search_results)])
   end
+  puts "Scanned #{files.count} reports."
   return counts
 end
