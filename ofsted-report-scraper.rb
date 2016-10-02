@@ -175,7 +175,7 @@ def download_report_pdfs(report_csv, directory,year=nil)
   progressbar = ProgressBar.create(starting_at: total_reports - reports_to_download.count, total: total_reports, format: "%a %e %c/%C PDFs downloaded (%P%)")
   Dir.mkdir(directory) unless Dir.exist?(directory)
   reports_to_download.each do |report|
-    progressbar.log("Downloading report #{report}")
+    # progressbar.log("Downloading report #{report}")
     download_report_pdf(report,directory)
     sleep rand(1.0..2.0)
     progressbar.increment
