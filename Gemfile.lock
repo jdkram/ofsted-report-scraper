@@ -1,27 +1,25 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    Ascii85 (1.0.2)
+    Ascii85 (1.0.3)
     afm (0.2.2)
     hashery (2.1.2)
-    httparty (0.14.0)
+    httparty (0.16.2)
       multi_xml (>= 0.5.2)
-    mini_portile2 (2.1.0)
-    multi_xml (0.5.5)
-    nokogiri (1.6.8)
-      mini_portile2 (~> 2.1.0)
-      pkg-config (~> 1.1.7)
+    mini_portile2 (2.3.0)
+    multi_xml (0.6.0)
+    nokogiri (1.8.4)
+      mini_portile2 (~> 2.3.0)
     open_uri_redirections (0.2.1)
-    pdf-reader (1.4.0)
+    pdf-reader (2.1.0)
       Ascii85 (~> 1.0.0)
       afm (~> 0.2.1)
       hashery (~> 2.0)
       ruby-rc4
       ttfunk
-    pkg-config (1.1.7)
-    ruby-progressbar (1.8.1)
+    ruby-progressbar (1.9.0)
     ruby-rc4 (0.1.5)
-    ttfunk (1.4.0)
+    ttfunk (1.5.1)
 
 PLATFORMS
   ruby
@@ -34,4 +32,4 @@ DEPENDENCIES
   ruby-progressbar
 
 BUNDLED WITH
-   1.12.5
+   1.16.3
